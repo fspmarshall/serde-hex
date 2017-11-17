@@ -2,6 +2,51 @@
 //! serialization/deserialization.
 
 
+/// macro for converting a type which implements `AsRef<[u8]>`
+/// into a strict hexadecimal representation.  Takes the variable
+/// to be converted, and the lenght of the variable in bytes
+/// as its argumgnets, and returns a `Result<String>`. 
+macro_rules! into_hex_strict {
+    ($src: ident, $len: expr) => {
+        {
+            // get a handle to `$src` as a `u8` slice.
+            let src: &[u8] = $src.as_ref();
+            // allocate a vector with exact expected size.
+            let mut hex = vec![0u8;2 + ($len * 2)];
+            // add prefix.
+            hex[0] = b'0';
+            hex[1] = b'x';
+            match $crate::utils::intohex(&mut hex[2..],src) {
+                Ok(()) => {
+                    Ok(String::from_utf8(hex).expect("should always be valid UTF-8"))   
+                },
+                Err(e) => Err(e)
+            }
+        }
+    }
+}
+
+/// macro for strictly parsing a buffer of hexadecimal bytes
+/// (anything which implements `AsRef<[u8]>`) into a
+/// byte-array.  Takes the variable representing the buffer,
+/// and the size of the array (in bytes) as arguments,
+/// and returns a `Result<[u8;n]>`.
+macro_rules! from_hex_strict {
+    ($src: ident, $len: expr) => {
+        {
+            let raw: &[u8] = $src.as_ref();
+            let pfx = "0x".as_bytes();
+            let hex = if raw.starts_with(pfx) { &raw[2..] } else { raw }; 
+            let mut buf = [0u8;$len];
+            match $crate::utils::fromhex(&mut buf, hex) {
+                Ok(()) => Ok(buf),
+                Err(e) => Err(e)
+            }
+        }
+    }
+}
+
+
 /// implements `SerHex` for a type which implements `From<[u8;n]>`
 /// and `AsRef<[u8]>`, and requires strict hexadecimal representations.
 #[macro_export]
@@ -12,27 +57,78 @@ macro_rules! impl_hex_array_strict {
             type Error = $crate::types::Error;
             // impl strict variant of `into_hex`.
             fn into_hex(&self) -> $crate::types::Result<String> {
-                // allocate a vactor with exact expected size.
-                let mut hex = vec![0u8;2 + ($len * 2)];
-                // add prefix.
-                hex[0] = b'0';
-                hex[1] = b'x';
-                $crate::utils::intohex(&mut hex[2..], self.as_ref())?;
-                Ok(String::from_utf8(hex).expect("should always be valid UTF-8"))
+                into_hex_strict!(self,$len)
             }
 
             // impl strict variant of `from_hex`.
             fn from_hex<T: AsRef<[u8]>>(src: T) -> $crate::types::Result<Self> {
-                let raw = src.as_ref();
-                let pfx = "0x".as_bytes();
-                let hex = if raw.starts_with(pfx) { &raw[2..] } else { raw }; 
-                let mut buf = [0u8;$len];
-                $crate::utils::fromhex(&mut buf, hex)?;
+                let buf = from_hex_strict!(src,$len)?;
                 Ok(buf.into())
             }
         }
     }
 }
+
+
+/*
+// TODO
+macro_rules! into_hex_compact {
+    ($src: ident, $len: expr) => {
+        {
+           
+        }
+
+    }
+}
+*/
+
+
+/// macro for parsing a compact buffer of hexadecimal bytes
+/// (anything which implements `AsRef<[u8]>`) into a
+/// byte-array.  Takes the variable representing the buffer,
+/// and the size of the array (in bytes) as arguments,
+/// and returns a `Result<[u8;n]>`.
+macro_rules! from_hex_compact {
+    ($src: ident, $len: expr) => {
+        {
+            let raw = $src.as_ref();
+            let pfx = "0x".as_bytes();
+            let hex = if raw.starts_with(pfx) { &raw[2..] } else { raw };
+            if hex.len() == 0 ||  hex.len() > $len * 2 {
+                return Err($crate::utils::HexError::BadSize(hex.len()).into());
+            }
+            let body = $len - (hex.len() / 2);
+            let head = hex.len() % 2;
+            let mut buf = [0u8;$len];
+            // --------------------------------------------------------------------------
+            // NOTE: the mess below this comment would not be necessary if this code were
+            // inside a normal function body and we could use the `?` operator without
+            // causing weird behavior.  this is a cautionary tale about sleep deprivation
+            // and reckless macro-related enthusiasm.  ye be warned.
+            // --------------------------------------------------------------------------
+            // attempt to parse the body of the hexadecimal buffer...
+            match $crate::utils::fromhex(&mut buf[body..],hex[head..]) {
+                Ok(()) => {
+                    // check if leading character exists.
+                    if head > 0 {
+                        // attempt to parse leading character.
+                        match $crate::utils::intobyte(b'0',hex[0]) {
+                            Ok(val) => {
+                                buf[body-head] = val;
+                                Ok(buf)
+                            },
+                            Err(e) => Err(e)
+                        }
+                    } else {
+                        Ok(buf)
+                    }
+                },
+                Err(e) => Err(e)
+            }
+        }
+    }
+}
+
 
 
 /// implements `SerHex` for a type which implements `From<[u8;n]>`
@@ -72,22 +168,7 @@ macro_rules! impl_hex_array_compact {
 
             // impl compact variant of `from_hex`.
             fn from_hex<T: AsRef<[u8]>>(src: T) -> $crate::types::Result<Self> {
-                let raw = src.as_ref();
-                let pfx = "0x".as_bytes();
-                let hex = if raw.starts_with(pfx) { &raw[2..] } else { raw };
-                if hex.len() == 0 ||  hex.len() > $len * 2 {
-                    return Err($crate::utils::HexError::BadSize(hex.len()).into());
-                }
-                let body = $len - (hex.len() / 2);
-                let head = hex.len() % 2;
-                let mut buf = [0u8;$len];
-                let src = if head > 0 {
-                    buf[body-head] = $crate::utils::intobyte(b'0',hex[0])?;
-                    &hex[head..]
-                } else {
-                    hex
-                };
-                $crate::utils::fromhex(&mut buf[body..],src)?;
+                let buf = from_hex_compact!(src,$len)?;
                 Ok(buf.into())
             }
         }
