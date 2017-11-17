@@ -1,0 +1,8 @@
+[package]
+name = "serde-hex"
+version = "0.1.0"
+authors = ["Forrest Marshall <forrest@mimirblockchain.solutions>"]
+
+[dependencies]
+serde = "1.0.21"
+
