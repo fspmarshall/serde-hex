@@ -1,4 +1,4 @@
-//! this module contains various helpful macros for hexadecimal
+//! This module contains various helpful macros for hexadecimal
 //! serialization/deserialization.
 
 
@@ -6,6 +6,7 @@
 /// into a strict hexadecimal representation.  Takes the variable
 /// to be converted, and the lenght of the variable in bytes
 /// as its argumgnets, and returns a `Result<String>`. 
+#[macro_export]
 macro_rules! into_hex_strict {
     ($src: ident, $len: expr) => {
         {
@@ -26,11 +27,12 @@ macro_rules! into_hex_strict {
     }
 }
 
-/// macro for strictly parsing a buffer of hexadecimal bytes
+/// Macro for strictly parsing a buffer of hexadecimal bytes
 /// (anything which implements `AsRef<[u8]>`) into a
 /// byte-array.  Takes the variable representing the buffer,
 /// and the size of the array (in bytes) as arguments,
 /// and returns a `Result<[u8;n]>`.
+#[macro_export]
 macro_rules! from_hex_strict {
     ($src: ident, $len: expr) => {
         {
@@ -47,7 +49,7 @@ macro_rules! from_hex_strict {
 }
 
 
-/// implements `SerHex` for a type which implements `From<[u8;n]>`
+/// Implements `SerHex` for a type which implements `From<[u8;n]>`
 /// and `AsRef<[u8]>`, and requires strict hexadecimal representations.
 #[macro_export]
 macro_rules! impl_hex_array_strict {
@@ -70,24 +72,64 @@ macro_rules! impl_hex_array_strict {
 }
 
 
-/*
-// TODO
+
+/// Macro for attempting to parse a type which implements `AsRef<[u8]>` into a
+/// buffer of hexadecimal bytes in compact representation.  Takes the variable
+/// representing the source type, and the length of the source (in bytes) as
+/// arguments.  Returns a `Result<Vec<u8>>` which should be trivially castable
+/// into a string with `String::from_utf8` if the process succeeded.
+#[macro_export]
 macro_rules! into_hex_compact {
     ($src: ident, $len: expr) => {
         {
-           
+            let bytes: &[u8] = $src.as_ref();
+            // get the index and value of the first nonzero byte.
+            if let Some((idx,val)) = bytes.iter().enumerate().find(|&(_,v)| *v > 0u8) {
+                // if leading value is less than 16, we represent it with a single character.
+                let rem = if *val <= 0xf { 1 } else { 0 };
+                // allocate a vector of the exact expected length.
+                let mut buf = vec![0u8;(bytes.len() - idx) * 2 + 2 - rem];
+                // add the `0x` prefix.
+                buf[0] = b'0'; buf[1] = b'x';
+                // attempt to parse the body of the bytes into hexadecimal.
+                // NOTE: this works even if the body length is zero (i.e.; resulting hex will
+                // be a single character), because ranges of the form `[n..]` where `n` is the
+                // length of the array or slice just return an empty slice.
+                match $crate::utils::intohex(&mut buf[(2 + rem)..],&bytes[(idx + rem)..]) {
+                    Ok(()) => {
+                        // check if a leading character needs to be added.
+                        if rem > 0 {
+                            match $crate::utils::fromval(bytes[idx]) {
+                                Ok(val) => {
+                                    buf[2] = val;
+                                    Ok(buf)
+                                },
+                                Err(e) => Err(e)
+                            }
+
+                        } else {
+                            Ok(buf)
+                        }
+                    },
+                    Err(e) => Err(e)
+                }
+            } else {
+                // if the iterator returned `None`, then all bytes are zeroes.
+                Ok(vec![b'0',b'x',b'0'])
+            }
+
         }
 
     }
 }
-*/
 
 
-/// macro for parsing a compact buffer of hexadecimal bytes
+/// Macro for parsing a compact buffer of hexadecimal bytes
 /// (anything which implements `AsRef<[u8]>`) into a
 /// byte-array.  Takes the variable representing the buffer,
 /// and the size of the array (in bytes) as arguments,
 /// and returns a `Result<[u8;n]>`.
+#[macro_export]
 macro_rules! from_hex_compact {
     ($src: ident, $len: expr) => {
         {
@@ -95,7 +137,7 @@ macro_rules! from_hex_compact {
             let pfx = "0x".as_bytes();
             let hex = if raw.starts_with(pfx) { &raw[2..] } else { raw };
             if hex.len() == 0 ||  hex.len() > $len * 2 {
-                return Err($crate::utils::HexError::BadSize(hex.len()).into());
+                return Err($crate::types::Error::BadSize(hex.len()).into());
             }
             let body = $len - (hex.len() / 2);
             let head = hex.len() % 2;
@@ -106,8 +148,11 @@ macro_rules! from_hex_compact {
             // causing weird behavior.  this is a cautionary tale about sleep deprivation
             // and reckless macro-related enthusiasm.  ye be warned.
             // --------------------------------------------------------------------------
-            // attempt to parse the body of the hexadecimal buffer...
-            match $crate::utils::fromhex(&mut buf[body..],hex[head..]) {
+            // attempt to parse the body of the hexadecimal buffer.
+            // this implementation works even if body does not exist, a slicing
+            // on `[n..]` where n is the length of the array or slice actually
+            // returns an empty slice.
+            match $crate::utils::fromhex(&mut buf[body..],&hex[head..]) {
                 Ok(()) => {
                     // check if leading character exists.
                     if head > 0 {
@@ -142,28 +187,8 @@ macro_rules! impl_hex_array_compact {
             
             // impl compact variant of `into_hex`.
             fn into_hex(&self) -> $crate::types::Result<String> {
-                let bytes = self.as_ref();
-                if let Some((idx,val)) = bytes.iter().enumerate().find(|&(_,v)| *v > 0u8) {
-                    // if leading value is less than 16, we represent it with a single character.
-                    let rem = if *val <= 0xf { 1 } else { 0 };
-                    // allocate a vector of the exact expected length.
-                    let mut buf = vec![0u8;(bytes.len() - idx) * 2 + 2 - rem];
-                    // add the `0x` prefix.
-                    buf[0] = b'0'; buf[1] = b'x';
-                    // if leading value was less than 16, use the underlying `fromval`
-                    // function to generate a single hexadecimal character.
-                    if rem > 0 { buf[2] = $crate::utils::fromval(bytes[idx])?; }
-                    // if there are still values to convert, pass off remaining work
-                    // to the standard `intohex` function (always true unless final
-                    // value is going to be in range `0x0f..0x01`).
-                    if idx < $len - rem {
-                        $crate::utils::intohex(&mut buf[(2 + rem)..],&bytes[(idx + rem)..])?;
-                    }
-                    Ok(String::from_utf8(buf).expect("should always be valid UTF-8"))
-                } else {
-                    // if the iterator returned `None`, then all bytes are zeroes.
-                    Ok("0x0".to_string())
-                }
+                let buf: Vec<u8> = into_hex_compact!(self,$len)?;
+                Ok(String::from_utf8(buf).expect("should always be valid UTF-8"))
             }
 
             // impl compact variant of `from_hex`.
@@ -188,7 +213,7 @@ mod tests {
     #[derive(Debug,PartialEq,Eq)]
     struct Bar([u8;4]);
     impl_newtype!(Bar,[u8;4]);
-    impl_hex_array_strict!(Bar,4);
+    impl_hex_array_compact!(Bar,4);
 
     #[test]
     fn hex_strict_ok() {
@@ -216,6 +241,16 @@ mod tests {
     #[should_panic]
     fn hex_compact_err() {
         let _ = Bar::from_hex("0x").unwrap();
+    }
+
+    #[test]
+    fn hex_compact_alloc() {
+        for i in 0..255 {
+            let b = Bar([0,0,0,i]);
+            let h = b.into_hex().unwrap();
+            assert!(h.len() <= 4);
+            assert_eq!(h.len(),h.capacity());
+        }
     }
 }
 
