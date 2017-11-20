@@ -11,7 +11,7 @@ macro_rules! impl_newtype {
     ($outer: ident, $inner: ty) => {
 
         // dereference to inner value.
-        impl $crate::std::ops::Deref for $outer {
+        impl ::std::ops::Deref for $outer {
             type Target = $inner;
             fn deref(&self) -> &Self::Target {
                 &self.0
@@ -19,7 +19,7 @@ macro_rules! impl_newtype {
         }
 
         // convert from the inner value to the outer value.
-        impl $crate::std::convert::From<$inner> for $outer {
+        impl ::std::convert::From<$inner> for $outer {
             fn from(inner: $inner) -> Self {
                 $outer(inner)
             }
@@ -48,8 +48,8 @@ macro_rules! impl_newtype_bytearray {
 
         // implement the `LowerHex` trait to allow generation
         // of lowercase hexadecimal representations.
-        impl $crate::std::fmt::LowerHex for $outer {
-            fn fmt(&self, f: &mut $crate::std::fmt::Formatter) -> $crate::std::fmt::Result {
+        impl ::std::fmt::LowerHex for $outer {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 for byte in self.as_ref().iter() {
                     write!(f,"{:02x}",byte)?;
                 }
@@ -59,8 +59,8 @@ macro_rules! impl_newtype_bytearray {
 
         // implement the `UpperHex` trait to allow generation
         // of uppercase hexadecimal representations.
-        impl $crate::std::fmt::UpperHex for $outer {
-            fn fmt(&self, f: &mut $crate::std::fmt::Formatter) -> $crate::std::fmt::Result {
+        impl ::std::fmt::UpperHex for $outer {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 for byte in self.as_ref().iter() {
                     write!(f,"{:02X}",byte)?;
                 }
@@ -101,21 +101,21 @@ macro_rules! impl_newtype_bytearray_ext {
         }
 
         // manually implemented `Debug` trait for printouts.
-        impl $crate::std::fmt::Debug for $outer {
-            fn fmt(&self, f: &mut $crate::std::fmt::Formatter) -> $crate::std::fmt::Result {
+        impl ::std::fmt::Debug for $outer {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 write!(f, "{}({:?})",stringify!($ident),self.as_ref())
             }
         }
 
         // manually implement `PartialEq` for comparison operations.
-        impl $crate::std::cmp::PartialEq for $outer {
+        impl ::std::cmp::PartialEq for $outer {
             fn eq(&self, other: &$outer) -> bool {
                 self.as_ref() == other.as_ref()
             }
         }
 
         // manually flag type as `Eq` for full equivalence relations.
-        impl $crate::std::cmp::Eq for $outer { }
+        impl ::std::cmp::Eq for $outer { }
     }
 }
 
