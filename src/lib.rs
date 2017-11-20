@@ -12,6 +12,8 @@ pub mod utils;
 use serde::{Serializer,Deserializer,Deserialize};
 use std::error;
 
+pub use types::Error;
+
 /// Trait specifying custom serialization and deserialization logic from a
 /// hexadecimal string to some arbitrary type.  This trait can be used to apply
 /// custom parsing when using serde's `#[derive(Serialize,Deserialize)]`
