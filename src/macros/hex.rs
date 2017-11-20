@@ -2,6 +2,7 @@
 //! serialization/deserialization.
 
 
+
 /// macro for converting a type which implements `AsRef<[u8]>`
 /// into a strict hexadecimal representation.  Takes the variable
 /// to be converted, and the lenght of the variable in bytes

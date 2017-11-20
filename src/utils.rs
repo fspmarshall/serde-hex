@@ -7,6 +7,9 @@ use types::{Result,Error};
 /// to their actual byte representation.
 #[inline]
 pub fn intoval(c: u8) -> Result<u8> {
+    // NOTE: the below logic was shamelessly stolen from the `hex` crate.
+    // See https://github.com/KokaKiwi/rust-hex for full licensing docs
+    // (MIT/APACHE).  
     match c {
         b'A'...b'F' => Ok(c - b'A' + 10),
             b'a'...b'f' => Ok(c - b'a' + 10),
