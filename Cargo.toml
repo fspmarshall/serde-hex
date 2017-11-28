@@ -3,6 +3,8 @@ name = "serde-hex"
 version = "0.1.0"
 authors = ["Forrest Marshall <forrest@mimirblockchain.solutions>"]
 
+
 [dependencies]
+smallvec = "0.5.0"
 serde = "1.0.21"
 

@@ -1,4 +1,6 @@
 //! various helper functions.
+use std::borrow::Borrow;
+use std::io;
 use types::{Result,Error};
 
 
@@ -33,6 +35,18 @@ pub fn fromval(v: u8) -> Result<u8> {
 }
 
 
+/// convert a byte value in range `0x00` to `0x0f` to its
+/// corresponding uppercase hexadecimal character.
+#[inline]
+pub fn fromvalcaps(v: u8) -> Result<u8> {
+    match v {
+        0xA...0xF => Ok(v - 0xa + b'A'),
+        0x0...0x9 => Ok(v + b'0'),
+        _ => Err(Error::BadByte(v))
+    }
+}
+
+
 /// attemt to convert a pair of bytes from a hexadecimal string into their
 /// underlying byte representation.
 #[inline]
@@ -45,6 +59,13 @@ pub fn intobyte(a: u8, b: u8) -> Result<u8> {
 #[inline]
 pub fn frombyte(val: u8) -> Result<(u8,u8)> {
     Ok((fromval(val >> 4)?,fromval(val & 0x0f)?))
+}
+
+
+/// attempt to convert a byte value into a pair of uppercase hexadecimal values.
+#[inline]
+pub fn frombytecaps(val: u8) -> Result<(u8,u8)> {
+    Ok((fromvalcaps(val >> 4)?,fromvalcaps(val & 0x0f)?))
 }
 
 
@@ -79,6 +100,45 @@ pub fn intohex(buf: &mut [u8], src: &[u8]) -> Result<()> {
     }
     Ok(())
 }
+
+/// Helper function which takes a mutable slice of expected hex-length and
+/// attempts to convert an immutable slice of bytes into capital hexadecimal characters.
+/// Returns an error if `buf` is not exactly twice the size of `src`.
+pub fn intohexcaps(buf: &mut [u8], src: &[u8]) -> Result<()> {
+    if buf.len() != src.len() * 2 {
+        return Err(Error::BadSize(buf.len()));
+    }
+    for (i,byte) in src.iter().enumerate() {
+        let (a,b) = frombytecaps(*byte)?;
+        let idx = i * 2;
+        buf[idx] = a;
+        buf[idx + 1] = b;
+    }
+    Ok(())
+}
+
+
+/// Helper function which attempts to convert an immutable set of bytes into 
+/// hexadecimal characters and write them to some destination.
+pub fn writehex<S,B,D>(src: S, mut dst: D) -> Result<()> where S: IntoIterator<Item=B>, B: Borrow<u8>, D: io::Write { 
+    for byte in src.into_iter() {
+        let (a,b) = frombyte(*byte.borrow())?;
+        dst.write_all(&[a,b])?;
+    }
+    Ok(())
+}
+
+
+/// Helper function which attempts to convert an immutable set of bytes into 
+/// capital hexadecimal characters and write them to some destination.
+pub fn writehexcaps<S,B,D>(src: S, mut dst: D) -> Result<()> where S: IntoIterator<Item=B>, B: Borrow<u8>, D: io::Write { 
+    for byte in src.into_iter() {
+        let (a,b) = frombytecaps(*byte.borrow())?;
+        dst.write_all(&[a,b])?;
+    }
+    Ok(())
+}
+
 
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 //! Miscellaneous type used by this crate.
-use std::{fmt,result,error};
+use std::{io,fmt,result,error};
 
 
 /// An alias of `std::result::Result` with this crate's
@@ -8,8 +8,11 @@ pub type Result<T> = result::Result<T,Error>;
 
 /// enum representing the possible errors that may
 /// occur while parsing a hexadecimal string.
-#[derive(Hash,Debug,Clone,PartialEq,Eq)]
+#[derive(Debug)]
 pub enum Error {
+    /// A wrapper around an `std::io::Error`.  This error indicates 
+    /// a failure to write to a buffer when converting a type to hex.
+    IoError(io::Error),
     /// Indicates that a buffer of an unexpected size was received.
     /// For strict implementations, this is anything other than the
     /// exact expected size.  For compact implementations, this is
@@ -30,6 +33,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            Error::IoError(ref err) => err.fmt(f),
             Error::BadSize(ref val) => write!(f, "Invalid Hex Size: {}", val),
             Error::BadChar(ref val) => write!(f, "Invalid Hex Char: {}", val),
             Error::BadByte(ref val) => write!(f, "Invalid Byte Val: {}", val)
@@ -37,19 +41,28 @@ impl fmt::Display for Error {
     }
 }
 
-
 // implement the standard error trait for hexadecimal errors.
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
+            Error::IoError(ref err) => err.description(),
             Error::BadSize(_) => "hex string was not within allowable size range",
             Error::BadChar(_) => "encountered a non-hexadecimal character during parsing",
             Error::BadByte(_) => "encountered byte outside of character range (0x0 - 0xf)"
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> { None }
+    fn cause(&self) -> Option<&error::Error> { 
+        match *self {
+            Error::IoError(ref err) => Some(err),
+            _ => None
+        }
+    }
 }
 
 
-
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::IoError(err)
+    }
+}
