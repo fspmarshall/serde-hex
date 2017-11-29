@@ -83,6 +83,8 @@ pub trait HexConf {
     fn withcap() -> bool { false }
 }
 
+// Strict Variants: Strict,StrictPfx,StrictCap,StrictCapPfx
+// Compact Variants: Compact,CompactPfx,CompactCap,CompactCapPfx
 
 /// Config indicating a strict representation
 /// with no capiltaization and no prefixing.
@@ -98,15 +100,15 @@ impl HexConf for StrictPfx {
 
 /// Config indicating a strict representation
 /// with capitalization but no prefixing.
-pub struct StrictCaps;
-impl HexConf for StrictCaps {
+pub struct StrictCap;
+impl HexConf for StrictCap {
     fn withcap() -> bool { true }
 }
 
 /// Config indicating a strict representation
 /// with capitalization and prefixing.
-pub struct StrictCapsPfx;
-impl HexConf for StrictCapsPfx {
+pub struct StrictCapPfx;
+impl HexConf for StrictCapPfx {
     fn withpfx() -> bool { true }
     fn withcap() -> bool { true }
 }
@@ -128,94 +130,19 @@ impl HexConf for CompactPfx {
 
 /// Config indicating compact representation
 /// with capitalization but no prefixing.
-pub struct CompactCaps;
-impl HexConf for CompactCaps {
+pub struct CompactCap;
+impl HexConf for CompactCap {
     fn compact() -> bool { true }
     fn withcap() -> bool { true }
 }
 
 /// Config indicating compact representation
 /// with capitalization and prefixing.
-pub struct CompactCapsPfx;
-impl HexConf for CompactCapsPfx {
+pub struct CompactCapPfx;
+impl HexConf for CompactCapPfx {
     fn compact() -> bool { true }
     fn withcap() -> bool { true }
     fn withpfx() -> bool { true }
-}
-
-
-/// macro for implementing `SerHex` for a type which implements
-/// `From<[u8;n]>` and `AsRef<[u8]>`.
-macro_rules! impl_core_bytearray {
-    ($type: ty, $len: expr) => {
-        impl<C> $crate::SerHex<C> for $type where C: HexConf {
-            type Error = $crate::types::Error;
-
-            fn into_hex_raw<D>(&self, mut dst: D) -> Result<(),Self::Error> where D: io::Write {
-                let src: &[u8] = self.as_ref();
-                debug_assert!(src.len() == $len);
-                // add prefix if we are doing such things.
-                if <C as HexConf>::withpfx() { dst.write_all("0x".as_bytes())?; }
-                // if 
-                if <C as HexConf>::compact() {
-                    // find index and location of first non-zero byte.
-                    if let Some((idx,val)) = src.iter().enumerate().find(|&(_,v)| *v > 0u8) {
-                        // if first non-zero byte is less than `0x10`, repr w/ one hex char.
-                        if *val < 0x10 {
-                            if <C as HexConf>::withcap() {
-                                dst.write_all(&[$crate::utils::fromvalcaps(*val)?])?;
-                                $crate::utils::writehexcaps(&src[(idx + 1)..],dst)
-                            } else {
-                                dst.write_all(&[$crate::utils::fromval(*val)?])?;
-                                $crate::utils::writehex(&src[(idx + 1)..],dst)
-                            }
-                        } else {
-                            if <C as HexConf>::withcap() {
-                                $crate::utils::writehexcaps(&src[idx..],dst)
-                            } else {
-                                $crate::utils::writehex(&src[idx..],dst)
-                            }
-                        }
-                    // if no non-zero byte was found, just write in a zero.
-                    } else {
-                        dst.write_all(&[b'0'])?;
-                        Ok(())
-                    }
-                } else {
-                    if <C as HexConf>::withcap() {
-                        $crate::utils::writehexcaps(src,dst)
-                    } else {
-                        $crate::utils::writehex(src,dst)
-                    }
-                }
-            }
-
-            fn from_hex_raw<S>(src: S) -> Result<Self,Self::Error> where S: AsRef<[u8]> {
-                let raw: &[u8] = src.as_ref();
-                let hex = if <C as HexConf>::withpfx() {
-                    let pfx = "0x".as_bytes();
-                    if raw.starts_with(pfx) { &raw[2..] } else { raw }
-                } else {
-                    raw
-                };
-                let mut buf = [0u8;$len];
-                if <C as HexConf>::compact() {
-                    if hex.len() == 0 ||  hex.len() > $len * 2 {
-                        return Err($crate::types::Error::BadSize(hex.len()));
-                    }
-                    let body = $len - (hex.len() / 2);
-                    let head = hex.len() % 2;
-                    if head > 0 {
-                        buf[body-head] = $crate::utils::intobyte(b'0',hex[0])?;
-                    }
-                    $crate::utils::fromhex(&mut buf[body..],&hex[head..])?;
-                } else {
-                    $crate::utils::fromhex(&mut buf[..], hex)?;
-                }
-                Ok(buf.into())
-            }
-        }
-    }
 }
 
 
