@@ -93,7 +93,7 @@ macro_rules! impl_serhex_bytearray {
                 Ok(())
             }
             fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
-                let rslt: ::std::result::Result<[u8;$len],<Self as $crate::SerHex>::Error> = from_hex_bytearray!(src,$len);
+                let rslt: ::std::result::Result<[u8;$len],Self::Error> = from_hex_bytearray!(src,$len);
                 match rslt {
                     Ok(buf) => Ok(buf.into()),
                     Err(e) => Err(e)
