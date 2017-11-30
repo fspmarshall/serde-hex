@@ -88,7 +88,7 @@ macro_rules! impl_serhex_bytearray {
     ($type: ty, $len: expr) => {
         impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
             type Error = $crate::types::Error;
-            fn into_hex_raw<D>(&self, mut dst: D) -> Result<(),Self::Error> where D: $crate::std::io::Write {
+            fn into_hex_raw<D>(&self, mut dst: D) -> Result<(),Self::Error> where D: ::std::io::Write {
                 into_hex_bytearray!(self,dst,$len)?;
                 Ok(())
             }
