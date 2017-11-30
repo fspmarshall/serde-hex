@@ -11,7 +11,7 @@ macro_rules! into_hex_bytearray {
             debug_assert!(src.len() == $len);
             // add prefix if we are doing such things.
             if <C as $crate::HexConf>::withpfx() { $dst.write_all("0x".as_bytes())?; }
-            // if 
+            // if
             if <C as $crate::HexConf>::compact() {
                 // find index and location of first non-zero byte.
                 if let Some((idx,val)) = src.iter().enumerate().find(|&(_,v)| *v > 0u8) {
@@ -93,13 +93,13 @@ macro_rules! impl_serhex_bytearray {
                 Ok(())
             }
             fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
-                let rslt: Result<[u8;$len],Self::Error> = from_hex_bytearray!(src,$len);
+                let rslt: Result<[u8;$len],<Self as $crate::SerHex>::Error> = from_hex_bytearray!(src,$len);
                 match rslt {
                     Ok(buf) => Ok(buf.into()),
                     Err(e) => Err(e)
                 }
             }
-             
+
         }
     }
 }
@@ -156,5 +156,5 @@ mod tests {
         assert_eq!(v[1],Foo([0x11,0x22,0x11,0x22]));
         let hs = <[Foo;2] as SerHex<StrictPfx>>::into_hex(&v).unwrap();
         assert_eq!(hs,"0xffaaffaa11221122");
-    } 
+    }
 }
