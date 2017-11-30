@@ -5,6 +5,7 @@ authors = ["Forrest Marshall <forrest@mimirblockchain.solutions>"]
 
 
 [dependencies]
+array-init = "0.0.2"
 smallvec = "0.5.0"
 serde = "1.0.21"
 

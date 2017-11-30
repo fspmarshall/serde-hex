@@ -147,6 +147,14 @@ mod tests {
         assert_eq!("0xfff11",<Foo as SerHex<CompactPfx>>::into_hex(&f).unwrap());
         assert_eq!("FFF11",<Foo as SerHex<CompactCap>>::into_hex(&f).unwrap());
         assert_eq!("0xFFF11",<Foo as SerHex<CompactCapPfx>>::into_hex(&f).unwrap());
-
     }
+
+    #[test]
+    fn blanket_array() {
+        let v: [Foo;2] = <[Foo;2] as SerHex<StrictPfx>>::from_hex("0xffaaffaa11221122").unwrap();
+        assert_eq!(v[0],Foo([0xff,0xaa,0xff,0xaa]));
+        assert_eq!(v[1],Foo([0x11,0x22,0x11,0x22]));
+        let hs = <[Foo;2] as SerHex<StrictPfx>>::into_hex(&v).unwrap();
+        assert_eq!(hs,"0xffaaffaa11221122");
+    } 
 }
