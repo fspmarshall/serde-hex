@@ -54,7 +54,11 @@ pub trait SerHex<C>: Sized where C: HexConf {
         use serde::ser::Error;
         let mut dst = SmallVec::<[u8;64]>::new();
         self.into_hex_raw(&mut dst).map_err(S::Error::custom)?;
-        serializer.serialize_bytes(dst.as_ref())
+        // if `dst` is not valid UTF-8 bytes, the underlying implementation
+        // is very broken, and you should be ashamed of yourelf.
+        debug_assert!(::std::str::from_utf8(dst.as_ref()).is_ok());
+        let s = unsafe { ::std::str::from_utf8_unchecked(dst.as_ref()) };
+        serializer.serialize_str(s)
     }
 
     /// Attempt to deserialize a hexadecimal string into an instance of `Self`.
