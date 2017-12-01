@@ -42,14 +42,17 @@ extern crate serde;
 
 #[macro_use]
 pub mod macros;
+pub mod config;
 pub mod types;
 pub mod utils;
+
+pub use config::*;
+pub use types::Error;
 
 use smallvec::SmallVec;
 use serde::{Serializer,Deserializer,Deserialize};
 use std::{io,error};
 
-pub use types::Error;
 
 /// Trait specifying custom serialization and deserialization logic from a
 /// hexadecimal string to some arbitrary type.  This trait can be used to apply
@@ -111,30 +114,6 @@ pub trait SerHex<C>: Sized where C: HexConf {
     }
 }
 
-macro_rules! impl_serhex_uint {
-    ($type: ty, $bytes: expr) => {
-        impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
-            type Error = $crate::types::Error;
-            fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {
-                let bytes: [u8;$bytes] = unsafe { ::std::mem::transmute(self.to_be()) };
-                into_hex_bytearray!(bytes,dst,$bytes)?;
-                Ok(())
-            }
-            fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
-                let rslt: ::std::result::Result<[u8;$bytes],Self::Error> = from_hex_bytearray!(src,$bytes);
-                match rslt {
-                    Ok(buf) => {
-                        let val: $type = unsafe { ::std::mem::transmute(buf) };
-                        Ok(Self::from_be(val))
-                    },
-                    Err(e) => Err(e)
-                }
-            }
-
-        }
-    }
-}
-
 
 impl_serhex_uint!(u8,1);
 impl_serhex_uint!(u16,2);
@@ -151,98 +130,6 @@ impl_serhex_strict_array!(
     33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
     49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64
 );
-
-
-/// Trait for supplying configuration to `SerHex`.
-/// This trait takes no `self` parameters, as it is
-/// intended to be applied unit structs.  All default
-/// implementation are set to `false`.
-pub trait HexConf {
-    /// function indicating whether to use compact 
-    /// (as apposed to strict) representation.
-    #[inline]
-    fn compact() -> bool { false }
-    /// function indicating whether to prefixing (`0x`).
-    #[inline]
-    fn withpfx() -> bool { false }
-    /// function indicating whether to use capital letters (`A-F`).
-    #[inline]
-    fn withcap() -> bool { false }
-}
-
-// Strict Variants: Strict,StrictPfx,StrictCap,StrictCapPfx
-// Compact Variants: Compact,CompactPfx,CompactCap,CompactCapPfx
-
-/// Config indicating a strict representation
-/// with no capiltaization and no prefixing.
-pub struct Strict;
-impl HexConf for Strict { }
-
-/// Config indicating a strict representation
-/// with prefixing but no capitalization.
-pub struct StrictPfx;
-impl HexConf for StrictPfx {
-    #[inline]
-    fn withpfx() -> bool { true }
-}
-
-/// Config indicating a strict representation
-/// with capitalization but no prefixing.
-pub struct StrictCap;
-impl HexConf for StrictCap {
-    #[inline]
-    fn withcap() -> bool { true }
-}
-
-/// Config indicating a strict representation
-/// with capitalization and prefixing.
-pub struct StrictCapPfx;
-impl HexConf for StrictCapPfx {
-    #[inline]
-    fn withpfx() -> bool { true }
-    #[inline]
-    fn withcap() -> bool { true }
-}
-
-/// Config indicating compact representation
-/// with no capitalization and no prefixing.
-pub struct Compact;
-impl HexConf for Compact {
-    #[inline]
-    fn compact() -> bool { true }
-}
-
-/// Config indicating compact representation
-/// with prefixing but no capitalization.
-pub struct CompactPfx;
-impl HexConf for CompactPfx {
-    #[inline]
-    fn compact() -> bool { true }
-    #[inline]
-    fn withpfx() -> bool { true }
-}
-
-/// Config indicating compact representation
-/// with capitalization but no prefixing.
-pub struct CompactCap;
-impl HexConf for CompactCap {
-    #[inline]
-    fn compact() -> bool { true }
-    #[inline]
-    fn withcap() -> bool { true }
-}
-
-/// Config indicating compact representation
-/// with capitalization and prefixing.
-pub struct CompactCapPfx;
-impl HexConf for CompactCapPfx {
-    #[inline]
-    fn compact() -> bool { true }
-    #[inline]
-    fn withcap() -> bool { true }
-    #[inline]
-    fn withpfx() -> bool { true }
-}
 
 
 

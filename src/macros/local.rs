@@ -1,5 +1,35 @@
 //! macros which are only useful inside of this crate.
 
+/// Implement `SerHex` for a unsigned integer with a size equivalent
+/// to `$bytes`.  Currently just offloads conversion to the appropriately
+/// sized byte-array logic, and then does a endianness-aware transmute to
+/// the target type.  TODO: benchmark this and determine if it is worth
+/// writing a custom impl instead.
+macro_rules! impl_serhex_uint {
+    ($type: ty, $bytes: expr) => {
+        impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
+            type Error = $crate::types::Error;
+            fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {
+                let bytes: [u8;$bytes] = unsafe { ::std::mem::transmute(self.to_be()) };
+                into_hex_bytearray!(bytes,dst,$bytes)?;
+                Ok(())
+            }
+            fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
+                let rslt: ::std::result::Result<[u8;$bytes],Self::Error> = from_hex_bytearray!(src,$bytes);
+                match rslt {
+                    Ok(buf) => {
+                        let val: $type = unsafe { ::std::mem::transmute(buf) };
+                        Ok(Self::from_be(val))
+                    },
+                    Err(e) => Err(e)
+                }
+            }
+
+        }
+    }
+}
+
+
 /// generate a blanket impl for a strict variant of `SerHex` for 
 /// an any array of `[T;$len]` where `T` meets the trait bound:
 /// `SerHex<Strict> + SerHex<StrictCap>`.  this macro is invoked
