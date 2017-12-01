@@ -9,9 +9,20 @@ use types::{Result,Error};
 /// to their actual byte representation.
 #[inline]
 pub fn intoval(c: u8) -> Result<u8> {
-    // NOTE: the below logic was shamelessly stolen from the `hex` crate.
-    // See https://github.com/KokaKiwi/rust-hex for full licensing docs
-    // (MIT/APACHE).  
+    // ------------------------------------------------------
+    // NOTE: the below logic is a nearly exact copy of an
+    // equivalent function in the `hex` crate.
+    // ------------------------------------------------------
+    //   repository - https://github.com/KokaKiwi/rust-hex
+    //   crates.io  - https://crates.io/crates/hex
+    // ------------------------------------------------------
+    // copyright at time of shameless theft:
+    //   Copyright (c) 2013-2014 The Rust Project Developers.
+    //   Copyright (c) 2015-2016 The rust-hex Developers
+    // ------------------------------------------------------
+    // licensing at time of shameless theft:
+    //   MIT/APACHE (at your option)
+    // ------------------------------------------------------
     match c {
         b'A'...b'F' => Ok(c - b'A' + 10),
             b'a'...b'f' => Ok(c - b'a' + 10),

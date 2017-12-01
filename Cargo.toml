@@ -2,10 +2,15 @@
 name = "serde-hex"
 version = "0.1.0"
 authors = ["Forrest Marshall <forrest@mimirblockchain.solutions>"]
-
+license = "MIT/Apache-2.0"
+readme = "README.md"
 
 [dependencies]
 array-init = "0.0.2"
 smallvec = "0.5.0"
 serde = "1.0.21"
 
+[dev-dependencies]
+serde = "1.0.20"
+serde_derive = "1.0.20"
+serde_json = "1.0.6"

@@ -99,7 +99,26 @@ macro_rules! impl_serhex_bytearray {
                     Err(e) => Err(e)
                 }
             }
+        }
+    }
+}
 
+
+macro_rules! impl_serhex_newtype_array {
+    ($outer: ty, $inner: ty, $len: expr) => {
+        impl<C> $crate::SerHex<C> for $outer where C: $crate::HexConf {
+            type Error = $crate::types::Error;
+            fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {
+                into_hex_bytearray!(self,dst,$len)?;
+                Ok(())
+            }
+            fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
+                let rslt: ::std::result::Result<[u8;$len],Self::Error> = from_hex_bytearray!(src,$len);
+                match rslt {
+                    Ok(buf) => Ok(buf.into()),
+                    Err(e) => Err(e)
+                }
+            }
         }
     }
 }

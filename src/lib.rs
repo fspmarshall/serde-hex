@@ -1,5 +1,39 @@
 //! The `serde-hex` crate contains various utilities for Serialization/Deserialization
 //! of hexadecimal values using [`serde`](https://crates.io/crates/serde).
+//!
+//! The core utility of this crate is the `SerHex` trait.  Once implemented, `SerHex`
+//! allows for easy configuration of hexadecimal serialization/deserialization with
+//! `serde-derive`:
+//!
+//! ```rust
+//! #[macro_use]
+//! extern crate serde_derive;
+//! extern crate serde_hex;
+//! use serde_hex::{SerHex,StrictPfx};
+//! 
+//! #[derive(Debug,Serialize,Deserialize)]
+//! struct Foo {
+//!    #[serde(with = "SerHex::<StrictPfx>")]
+//!    bar: [u8;32]
+//! }
+//!
+//! # fn main() {}
+//! ```
+//!
+//! The above example will cause serde to serialize `Bar` into a hexadecimal string
+//! with strict sizing (padded with leading zeroes), and prefixing (leading `0x`).
+//! The possible configurations allow for any combination of strict/compact
+//! representations, prefixing, and capitalizing (e.g.; `Compact`,
+//! `StrictCapPfx`, etc...).
+//!
+//! This crate provides implementations of `SerHex` for all unsigned integer types,
+//! as well as generic impls for arrays of types which implement `SerHex`.  The generic
+//! impls apply only to strict variants of the trait, and only for arrays of length 1
+//! through 64 (no impl is provided for arrays of length 0 since there isn't really
+//! a reasonable way to represent a zero-sized value in hex).
+//! 
+//! 
+//! 
 #![warn(missing_docs)]
 
 extern crate array_init;
@@ -24,8 +58,14 @@ pub use types::Error;
 /// this trait.  Simplistic default implimentations for the the `serialize` and
 /// `deserialize` methods are provided based on `into_hex_raw` and `from_hex_raw` respectively.
 pub trait SerHex<C>: Sized where C: HexConf {
-    /// Any error type which implements the `Error` trait can seamlessly
-    /// interop with `serde` serializde/deserialize functionality.
+    
+    /// Error type of the implementation.
+    ///
+    /// Unless you have a compelling reason to do so, it is best to use the error
+    /// type exposed by `serde-hex`, since this is the error used for most provided
+    /// implementations (the generic array impls will work with any error that
+    /// implements [`From`](https://doc.rust-lang.org/std/convert/trait.From.html)
+    /// for the `serde-hex` error type).
     type Error: error::Error;
 
     /// Attept to convert `self` to hexadecimal, writing the resultant bytes to some buffer.
@@ -47,6 +87,7 @@ pub trait SerHex<C>: Sized where C: HexConf {
     }
     
     /// Attempt to serialize `self` into a hexadecimal string representation.
+    ///
     /// *NOTE*: The default implementation attempts to avoid heap-allocation with a
     /// [`SmallVec`](https://docs.rs/smallvec/) of size `[u8;64]`. This default will
     /// prevent heap-alloc for non-prefixed serializations of `[u8;32]` or smaller.
@@ -69,6 +110,36 @@ pub trait SerHex<C>: Sized where C: HexConf {
         Ok(rslt)
     }
 }
+
+macro_rules! impl_serhex_uint {
+    ($type: ty, $bytes: expr) => {
+        impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
+            type Error = $crate::types::Error;
+            fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {
+                let bytes: [u8;$bytes] = unsafe { ::std::mem::transmute(self.to_be()) };
+                into_hex_bytearray!(bytes,dst,$bytes)?;
+                Ok(())
+            }
+            fn from_hex_raw<S>(src: S) -> ::std::result::Result<Self,Self::Error> where S: AsRef<[u8]> {
+                let rslt: ::std::result::Result<[u8;$bytes],Self::Error> = from_hex_bytearray!(src,$bytes);
+                match rslt {
+                    Ok(buf) => {
+                        let val: $type = unsafe { ::std::mem::transmute(buf) };
+                        Ok(Self::from_be(val))
+                    },
+                    Err(e) => Err(e)
+                }
+            }
+
+        }
+    }
+}
+
+
+impl_serhex_uint!(u8,1);
+impl_serhex_uint!(u16,2);
+impl_serhex_uint!(u32,4);
+impl_serhex_uint!(u64,8);
 
 
 // implement strict variants of `SerHex` for arrays of `T` with
@@ -111,6 +182,7 @@ impl HexConf for Strict { }
 /// with prefixing but no capitalization.
 pub struct StrictPfx;
 impl HexConf for StrictPfx {
+    #[inline]
     fn withpfx() -> bool { true }
 }
 
@@ -118,6 +190,7 @@ impl HexConf for StrictPfx {
 /// with capitalization but no prefixing.
 pub struct StrictCap;
 impl HexConf for StrictCap {
+    #[inline]
     fn withcap() -> bool { true }
 }
 
@@ -125,7 +198,9 @@ impl HexConf for StrictCap {
 /// with capitalization and prefixing.
 pub struct StrictCapPfx;
 impl HexConf for StrictCapPfx {
+    #[inline]
     fn withpfx() -> bool { true }
+    #[inline]
     fn withcap() -> bool { true }
 }
 
@@ -133,6 +208,7 @@ impl HexConf for StrictCapPfx {
 /// with no capitalization and no prefixing.
 pub struct Compact;
 impl HexConf for Compact {
+    #[inline]
     fn compact() -> bool { true }
 }
 
@@ -140,7 +216,9 @@ impl HexConf for Compact {
 /// with prefixing but no capitalization.
 pub struct CompactPfx;
 impl HexConf for CompactPfx {
+    #[inline]
     fn compact() -> bool { true }
+    #[inline]
     fn withpfx() -> bool { true }
 }
 
@@ -148,7 +226,9 @@ impl HexConf for CompactPfx {
 /// with capitalization but no prefixing.
 pub struct CompactCap;
 impl HexConf for CompactCap {
+    #[inline]
     fn compact() -> bool { true }
+    #[inline]
     fn withcap() -> bool { true }
 }
 
@@ -156,8 +236,11 @@ impl HexConf for CompactCap {
 /// with capitalization and prefixing.
 pub struct CompactCapPfx;
 impl HexConf for CompactCapPfx {
+    #[inline]
     fn compact() -> bool { true }
+    #[inline]
     fn withcap() -> bool { true }
+    #[inline]
     fn withpfx() -> bool { true }
 }
 

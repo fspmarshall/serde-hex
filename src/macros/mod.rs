@@ -1,8 +1,9 @@
-//! Collection of useful macros for implementing hexadecimal conversion
-//! on common patterns.  Also includes macros for defining useful triats
-//! for byte-array newtypes (e.g.; `Foo([u8;n])`), since this is one of
-//! the most common situations where hexadeciaml serialization/deserialization
-//! is useful.
+//! Collection of useful macros.
+//!
+//! Includes macros for easyily implementing `SerHex`, as well as a number of
+//! macros for defining useful triats on byte-array style newtypes
+//! (e.g.; `Foo([u8;n])`).
+
 
 #[macro_use]
 pub mod misc;
@@ -12,7 +13,4 @@ pub mod hex;
 
 #[macro_use]
 mod local;
-
-
-
 
