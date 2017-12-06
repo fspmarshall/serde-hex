@@ -111,14 +111,54 @@ pub trait SerHex<C>: Sized where C: HexConf {
         let buff: &[u8] = Deserialize::deserialize(deserializer)?; 
         let rslt = Self::from_hex_raw(buff).map_err(D::Error::custom)?;
         Ok(rslt)
+    } 
+}
+
+
+/// Variant of `SerHex` for serializing/deserializing `Option` types.
+/// Any type `T` which implements `SerHex<C>` implements `SerHexOpt<C>`
+/// automatically.
+pub trait SerHexOpt<C>: Sized + SerHex<C> where C: HexConf {
+    
+    /// Same as `SerHex::serialize`, except for `Option<Self>` instead of `Self`.
+    fn serialize<S>(option: &Option<Self>, serializer: S) -> Result<S::Ok,S::Error> where S: Serializer {
+        use serde::ser::Error;
+        if let Some(ref src) = *option {
+            let mut dst = SmallVec::<[u8;64]>::new();
+            Self::into_hex_raw(src, &mut dst).map_err(S::Error::custom)?;
+            // if `dst` is not valid UTF-8 bytes, the underlying implementation
+            // is very broken, and you should be ashamed of yourelf.
+            debug_assert!(::std::str::from_utf8(dst.as_ref()).is_ok());
+            let s = unsafe { ::std::str::from_utf8_unchecked(dst.as_ref()) };
+            //serializer.serialize_str(s)
+            serializer.serialize_some(s)
+        } else {
+            serializer.serialize_none()
+        }
+    }
+
+    /// Same as `SerHex::deserialize`, except for `Option<Self>` instead of `Self`.
+    fn deserialize<'de, D>(deserializer: D) -> Result<Option<Self>,D::Error> where D: Deserializer<'de> {
+        use serde::de::Error;
+        let option: Option<&[u8]> = Deserialize::deserialize(deserializer)?;
+        if let Some(ref buff) = option {
+            let rslt = Self::from_hex_raw(buff).map_err(D::Error::custom)?;
+            Ok(Some(rslt))
+        } else {
+            Ok(None)
+        }
     }
 }
+
+
+impl<T,C> SerHexOpt<C> for T where T: Sized + SerHex<C>, C: HexConf { }
 
 
 impl_serhex_uint!(u8,1);
 impl_serhex_uint!(u16,2);
 impl_serhex_uint!(u32,4);
 impl_serhex_uint!(u64,8);
+
 
 
 // implement strict variants of `SerHex` for arrays of `T` with

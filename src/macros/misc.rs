@@ -1,7 +1,6 @@
 //! This module contains various helpful macros which are not
 //! strictly part of Hexadecimal serialization/deserialization.
 
-
 /// implements useful traits for the 'newtype' pattern.
 /// this macro is automatically implemented by `impl_newtype_bytearray`,
 /// so prefer that macro if `inner` is a byte-array (`[u8;n]`).
