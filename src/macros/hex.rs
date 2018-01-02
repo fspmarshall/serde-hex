@@ -4,7 +4,7 @@
 #[macro_export]
 macro_rules! impl_serhex_seq {
     ($type: ty, $bytes: expr) => {
-        impl $crate::SerHexSeq<Strict> for $type {
+        impl $crate::SerHexSeq<$crate::Strict> for $type {
             fn size() -> usize { $bytes }
         }
 
