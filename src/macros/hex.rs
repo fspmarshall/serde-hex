@@ -1,6 +1,7 @@
 //! Various helpful macros related to implementing `SerHex`.
 
 /// implement `SerHexSeq` for a specified type.
+#[macro_export]
 macro_rules! impl_serhex_seq {
     ($type: ty, $bytes: expr) => {
         impl $crate::SerHexSeq<Strict> for $type {
