@@ -1,5 +1,26 @@
 //! Various helpful macros related to implementing `SerHex`.
 
+/// implement `SerHexSeq` for a specified type.
+macro_rules! impl_serhex_seq {
+    ($type: ty, $bytes: expr) => {
+        impl $crate::SerHexSeq<Strict> for $type {
+            fn size() -> usize { $bytes }
+        }
+
+        impl $crate::SerHexSeq<$crate::StrictPfx> for $type {
+            fn size() -> usize { $bytes }
+        }
+
+        impl $crate::SerHexSeq<$crate::StrictCap> for $type {
+            fn size() -> usize { $bytes }
+        }
+
+        impl $crate::SerHexSeq<$crate::StrictCapPfx> for $type {
+            fn size() -> usize { $bytes }
+        }
+    }
+}
+
 
 /// helper macro for implementing the `into_hex_raw` function for
 /// bytearray-style types.
@@ -86,6 +107,7 @@ macro_rules! from_hex_bytearray {
 #[macro_export]
 macro_rules! impl_serhex_bytearray {
     ($type: ty, $len: expr) => {
+        impl_serhex_seq!($type,$len);
         impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
             type Error = $crate::types::Error;
             fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {
@@ -106,6 +128,7 @@ macro_rules! impl_serhex_bytearray {
 
 macro_rules! impl_serhex_newtype_array {
     ($outer: ty, $inner: ty, $len: expr) => {
+        impl_serhex_seq!($type,$len);
         impl<C> $crate::SerHex<C> for $outer where C: $crate::HexConf {
             type Error = $crate::types::Error;
             fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {

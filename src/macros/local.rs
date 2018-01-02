@@ -1,5 +1,6 @@
 //! macros which are only useful inside of this crate.
 
+
 /// Implement `SerHex` for a unsigned integer with a size equivalent
 /// to `$bytes`.  Currently just offloads conversion to the appropriately
 /// sized byte-array logic, and then does a endianness-aware transmute to
@@ -7,6 +8,7 @@
 /// writing a custom impl instead.
 macro_rules! impl_serhex_uint {
     ($type: ty, $bytes: expr) => {
+        impl_serhex_seq!($type,$bytes);
         impl<C> $crate::SerHex<C> for $type where C: $crate::HexConf {
             type Error = $crate::types::Error;
             fn into_hex_raw<D>(&self, mut dst: D) -> ::std::result::Result<(),Self::Error> where D: ::std::io::Write {

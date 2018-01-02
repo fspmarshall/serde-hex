@@ -51,6 +51,7 @@ pub use types::Error;
 
 use smallvec::SmallVec;
 use serde::{Serializer,Deserializer,Deserialize};
+use std::iter::FromIterator;
 use std::{io,error};
 
 
@@ -152,6 +153,72 @@ pub trait SerHexOpt<C>: Sized + SerHex<C> where C: HexConf {
 
 
 impl<T,C> SerHexOpt<C> for T where T: Sized + SerHex<C>, C: HexConf { }
+
+
+
+
+/// Variant of `SerHex` for serializing/deserializing sequence types as
+/// contiguous hexadecimal strings. 
+pub trait SerHexSeq<C>: Sized + SerHex<Strict> + SerHex<StrictCap> where C: HexConf {
+
+    /// expected size (in bytes) of a single element.  used to partition
+    /// the hexadecimal string into individual elements.
+    fn size() -> usize;
+    
+    /// Same as `SerHex::serialize`, but for sequences of `Self`.
+    fn serialize<'a,S,T>(sequence: T, serializer: S) -> Result<S::Ok,S::Error> where S: Serializer, T: IntoIterator<Item=&'a Self>, Self: 'a {
+        use serde::ser::Error;
+        let mut dst = SmallVec::<[u8;128]>::new();
+        if <C as HexConf>::withpfx() { dst.extend_from_slice(b"0x"); }
+        if <C as HexConf>::withcap() {
+            for elem in sequence.into_iter() {
+                <Self as SerHex<StrictCap>>::into_hex_raw(elem, &mut dst).map_err(S::Error::custom)?;
+            }
+        } else {
+            for elem in sequence.into_iter() {
+                <Self as SerHex<Strict>>::into_hex_raw(elem, &mut dst).map_err(S::Error::custom)?;
+            }
+        }
+        let s = unsafe { ::std::str::from_utf8_unchecked(dst.as_ref()) };
+        serializer.serialize_str(s)
+    }
+
+    /// Same as `SerHex::deserialize`, but for sequences of `Self`.
+    fn deserialize<'de, D,T>(deserializer: D) -> Result<T,D::Error> where D: Deserializer<'de>, T: FromIterator<Self> {
+        use serde::de::Error;
+        let raw: &[u8] = Deserialize::deserialize(deserializer)?;
+        let src = if raw.starts_with(b"0x") { &raw[2..] } else { &raw[..] };
+        let hexsize = Self::size() * 2;
+        if src.len() % hexsize == 0 {
+            let mut buff = Vec::with_capacity(src.len() / hexsize);
+            for chunk in src.chunks(hexsize) {
+                let elem = <Self as SerHex<Strict>>::from_hex_raw(chunk).map_err(D::Error::custom)?;
+                buff.push(elem);
+            }
+            Ok(buff.into_iter().collect())
+        } else {
+            Err(D::Error::custom("bad hexadecimal sequence size"))
+        }
+    }
+}
+
+/*
+impl SerHexSeq<Strict> for u8 {
+    fn size() -> usize { 1 }
+}
+
+impl SerHexSeq<StrictPfx> for u8 {
+    fn size() -> usize { 1 }
+}
+
+impl SerHexSeq<StrictCap> for u8 {
+    fn size() -> usize { 1 }
+}
+
+impl SerHexSeq<StrictCapPfx> for u8 {
+    fn size() -> usize { 1 }
+}
+*/
 
 
 impl_serhex_uint!(u8,1);
