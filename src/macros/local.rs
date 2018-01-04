@@ -32,6 +32,26 @@ macro_rules! impl_serhex_uint {
 }
 
 
+/// implement `SerHexSeq` for an array of elements which implement
+/// `SerHexSeq`.
+macro_rules! impl_serhex_seq_array {
+    ($conf:ty,$len:expr) => {
+
+        impl<T,E> $crate::SerHexSeq<$conf> for [T;$len] where 
+            E:  From<$crate::types::Error> +
+                ::std::error::Error,
+            T:  $crate::SerHexSeq<$conf> +
+                $crate::SerHex<$crate::Strict,Error=E> +
+                $crate::SerHex<$crate::StrictPfx,Error=E> +
+                $crate::SerHex<$crate::StrictCap,Error=E> +  
+                $crate::SerHex<$crate::StrictCapPfx,Error=E> {
+            
+            fn size() -> usize { <T as $crate::SerHexSeq<$conf>>::size() * $len }
+        }
+    }
+}
+
+
 /// generate a blanket impl for a strict variant of `SerHex` for 
 /// an any array of `[T;$len]` where `T` meets the trait bound:
 /// `SerHex<Strict> + SerHex<StrictCap>`.  this macro is invoked
@@ -42,6 +62,9 @@ macro_rules! impl_serhex_uint {
 /// case.  This needs to be updated. 
 macro_rules! impl_serhex_strictconf_array {
     ($conf:ty,$len:expr) => {
+
+        impl_serhex_seq_array!($conf,$len);
+
         impl<T,E> $crate::SerHex<$conf> for [T;$len] where 
             E:  From<$crate::types::Error> +
                 ::std::error::Error,
@@ -141,7 +164,13 @@ macro_rules! impl_serhex_strict_array {
             impl_serhex_strictconf_array!($crate::Strict,$len);
             impl_serhex_strictconf_array!($crate::StrictPfx,$len);
             impl_serhex_strictconf_array!($crate::StrictCap,$len);
-            impl_serhex_strictconf_array!($crate::StrictCapPfx,$len);
+            impl_serhex_strictconf_array!($crate::StrictCapPfx,$len); 
         )+
     }
 }
+
+
+
+
+
+

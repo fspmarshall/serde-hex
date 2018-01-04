@@ -202,23 +202,7 @@ pub trait SerHexSeq<C>: Sized + SerHex<Strict> + SerHex<StrictCap> where C: HexC
     }
 }
 
-/*
-impl SerHexSeq<Strict> for u8 {
-    fn size() -> usize { 1 }
-}
 
-impl SerHexSeq<StrictPfx> for u8 {
-    fn size() -> usize { 1 }
-}
-
-impl SerHexSeq<StrictCap> for u8 {
-    fn size() -> usize { 1 }
-}
-
-impl SerHexSeq<StrictCapPfx> for u8 {
-    fn size() -> usize { 1 }
-}
-*/
 
 
 impl_serhex_uint!(u8,1);
