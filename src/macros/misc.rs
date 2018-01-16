@@ -1,7 +1,7 @@
 //! This module contains various helpful macros which are not
 //! strictly part of Hexadecimal serialization/deserialization.
 
-
+#[macro_export]
 macro_rules! impl_newtype {
     ($outer:ident, $inner: ty) => {
         impl<R: ?Sized> AsRef<R> for $outer where $inner: AsRef<R> {
