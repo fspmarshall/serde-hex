@@ -4,6 +4,14 @@
 #[macro_export]
 macro_rules! impl_newtype {
     ($outer:ident, $inner: ty) => {
+
+        impl From<$inner> for $outer {
+            
+            fn from(inner: $inner) -> Self {
+                $outer(inner)
+            }
+        }
+
         impl<R: ?Sized> AsRef<R> for $outer where $inner: AsRef<R> {
 
             fn as_ref(&self) -> &R {
