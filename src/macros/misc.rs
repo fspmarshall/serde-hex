@@ -18,7 +18,7 @@ macro_rules! impl_newtype {
             }
         }
 
-        impl $crate::std::ops::Deref for $outer {
+        impl ::std::ops::Deref for $outer {
 
             type Target = $inner;
 
@@ -27,21 +27,21 @@ macro_rules! impl_newtype {
             }
         }
 
-        impl $crate::std::ops::DerefMut for $outer {
+        impl ::std::ops::DerefMut for $outer {
 
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.0
             }
         }
 
-        impl $crate::std::borrow::Borrow<$inner> for $outer {
+        impl ::std::borrow::Borrow<$inner> for $outer {
 
             fn borrow(&self) -> &$inner {
                 &self.0
             }
         }
 
-        impl $crate::std::borrow::BorrowMut<$inner> for $outer {
+        impl ::std::borrow::BorrowMut<$inner> for $outer {
 
             fn borrow_mut(&mut self) -> &mut $inner {
                 &mut self.0
