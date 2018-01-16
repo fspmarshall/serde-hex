@@ -47,7 +47,7 @@ pub mod types;
 pub mod utils;
 
 pub use config::*;
-pub use types::Error;
+pub use types::{Error,ParseHexError};
 
 use smallvec::SmallVec;
 use serde::{Serializer,Deserializer,Deserialize};
