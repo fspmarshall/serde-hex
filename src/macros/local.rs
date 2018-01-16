@@ -141,7 +141,11 @@ macro_rules! impl_serhex_strictconf_array {
                         if let Some(err) = errors.next() {
                             Err(err.into())
                         } else {
-                            Err($crate::types::Error::BadSize(hex.len()).into())
+                            let expect = $len;
+                            let actual = hex.len() / $len;
+                            let inner = $crate::types::ParseHexError::Size { expect, actual };
+                            let error = $crate::types::Error::from(inner);
+                            Err(error.into())
                         }
                     }
                 }

@@ -40,10 +40,10 @@ macro_rules! into_hex_bytearray {
                     // if first non-zero byte is less than `0x10`, repr w/ one hex char.
                     if *val < 0x10 {
                         if <C as $crate::HexConf>::withcap() {
-                            $dst.write_all(&[$crate::utils::fromvalcaps(*val)?])?;
+                            $dst.write_all(&[$crate::utils::fromvalcaps(*val)])?;
                             $crate::utils::writehexcaps(&src[(idx + 1)..],$dst)
                         } else {
-                            $dst.write_all(&[$crate::utils::fromval(*val)?])?;
+                            $dst.write_all(&[$crate::utils::fromval(*val)])?;
                             $crate::utils::writehex(&src[(idx + 1)..],$dst)
                         }
                     } else {
@@ -85,11 +85,16 @@ macro_rules! from_hex_bytearray {
             };
             let mut buf = [0u8;$len];
             if <C as $crate::HexConf>::compact() {
-                if hex.len() == 0 ||  hex.len() > $len * 2 {
-                    return Err($crate::types::Error::BadSize(hex.len()));
+                let min = 1;
+                let max = $len * 2;
+                let got = hex.len();
+                if got < min || got > max {
+                    let inner = $crate::types::ParseHexError::Range { min, max, got };
+                    let error = $crate::types::Error::from(inner);
+                    return Err(error.into());
                 }
-                let body = $len - (hex.len() / 2);
-                let head = hex.len() % 2;
+                let body = $len - (got / 2);
+                let head = got % 2;
                 if head > 0 {
                     buf[body-head] = $crate::utils::intobyte(b'0',hex[0])?;
                 }
