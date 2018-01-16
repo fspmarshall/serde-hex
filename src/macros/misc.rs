@@ -1,11 +1,61 @@
 //! This module contains various helpful macros which are not
 //! strictly part of Hexadecimal serialization/deserialization.
 
+
+macro_rules! impl_newtype {
+    ($outer:ident, $inner: ty) => {
+        impl<R: ?Sized> AsRef<R> for $outer where $inner: AsRef<R> {
+
+            fn as_ref(&self) -> &R {
+                self.0.as_ref()
+            }
+        }
+
+        impl<R: ?Sized> AsMut<R> for $outer where $inner: AsMut<R> {
+
+            fn as_mut(&mut self) -> &mut R {
+                self.0.as_mut()
+            }
+        }
+
+        impl $crate::std::ops::Deref for $outer {
+
+            type Target = $inner;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl $crate::std::ops::DerefMut for $outer {
+
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
+            }
+        }
+
+        impl $crate::std::borrow::Borrow<$inner> for $outer {
+
+            fn borrow(&self) -> &$inner {
+                &self.0
+            }
+        }
+
+        impl $crate::std::borrow::BorrowMut<$inner> for $outer {
+
+            fn borrow_mut(&mut self) -> &mut $inner {
+                &mut self.0
+            }
+        }
+    }
+}
+
+
 /// implements useful traits for the 'newtype' pattern.
 /// this macro is automatically implemented by `impl_newtype_bytearray`,
 /// so prefer that macro if `inner` is a byte-array (`[u8;n]`).
 #[macro_export]
-macro_rules! impl_newtype {
+macro_rules! impl_newtype_old {
 
     ($outer: ident, $inner: ty) => {
 
@@ -57,7 +107,7 @@ macro_rules! impl_newtype_array {
     
     ($outer: ident, $inner: ty, $len: expr) => {
         impl_newtype!($outer,[u8;$len]);
-
+/*
         // get reference as byte-slice.
         impl AsRef<[$inner]> for $outer {
             fn as_ref(&self) -> &[$inner] {
@@ -70,7 +120,7 @@ macro_rules! impl_newtype_array {
                 self.0.as_mut()
             }
         }
-        
+*/
     }
 }
 
