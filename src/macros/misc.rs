@@ -187,7 +187,7 @@ macro_rules! impl_newtype_array_ext {
     ($outer: ident, $inner: ty, $len:expr) => {
         // implement everything from the nomral bytearray macro.
         impl_newtype_array!($outer,$inner,$len); 
-
+/*
         // manually implemented `Debug` trait for printouts.
         impl ::std::fmt::Debug for $outer {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
@@ -195,7 +195,7 @@ macro_rules! impl_newtype_array_ext {
                 write!(f, "{}({:?})",stringify!($ident),s)
             }
         }
-
+*/
         // manually implement `PartialEq` for comparison operations.
         impl ::std::cmp::PartialEq for $outer {
             fn eq(&self, other: &$outer) -> bool {
