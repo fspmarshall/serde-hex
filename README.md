@@ -1,4 +1,4 @@
-# serde-hex
+# serde-hex [![Build Status](https://travis-ci.org/forrest-marshall/serde-hex.svg?branch=master)](https://travis-ci.org/forrest-marshall/serde-hex)
 
 Rust crate for easy and versatile serialization/deserialization of hexadecimal values.
 
