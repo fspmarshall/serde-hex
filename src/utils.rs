@@ -165,7 +165,7 @@ mod tests {
     fn hex_bytes() {
         use utils::{frombyte,intobyte};
         for i in 0..255u8 {
-            let h = frombyte(i).unwrap();
+            let h = frombyte(i);
             let b = intobyte(h.0,h.1).unwrap();
             assert_eq!(i,b);
         }
@@ -173,7 +173,7 @@ mod tests {
         for s in hex.iter() {
             let s: &[u8] = s.as_ref();
             let v = intobyte(s[0],s[1]).unwrap();
-            let (a,b) = frombyte(v).unwrap();
+            let (a,b) = frombyte(v);
             assert_eq!(s,&[a,b]);
         }
     }
@@ -187,7 +187,7 @@ mod tests {
             let mut buff = vec![0u8;src.len() / 2];
             let mut rslt = vec![0u8;buff.len() * 2];
             fromhex(&mut buff, src).unwrap();
-            intohex(&mut rslt, &buff).unwrap();
+            intohex(&mut rslt, &buff);
             assert_eq!(src,AsRef::<[u8]>::as_ref(&rslt));
         }
     }
