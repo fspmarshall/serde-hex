@@ -2,6 +2,10 @@
 name = "serde-hex"
 version = "0.1.0"
 authors = ["Forrest Marshall <fourthetrees@gmail.com>"]
+description = "Hexadecimal encoding/decoding with serde."
+documentation = "https://docs.rs/serde-hex"
+repository = "https://github.com/forrest-marshall/serde-hex.git"
+keywords = ["serde","hex","hexadecimal"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
 
