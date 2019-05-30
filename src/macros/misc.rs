@@ -1,6 +1,8 @@
 //! This module contains various helpful macros which are not
 //! strictly part of Hexadecimal serialization/deserialization.
 
+/// Implement common conversion traits for the newtype pattern.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype {
     ($outer:ident, $inner: ty) => {
@@ -59,6 +61,7 @@ macro_rules! impl_newtype {
 /// implements useful traits for the 'newtype' pattern.
 /// this macro is automatically implemented by `impl_newtype_bytearray`,
 /// so prefer that macro if `inner` is a byte-array (`[u8;n]`).
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_old {
     ($outer: ident, $inner: ty) => {
@@ -103,6 +106,7 @@ macro_rules! impl_newtype_old {
 /// implements useful traits for array newtypes
 /// (e.g.; `Foo([Bar;n])`).  Includes all implementations from
 /// the `impl_newtype` macro.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_array {
     ($outer: ident, $inner: ty, $len: expr) => {
@@ -126,6 +130,7 @@ macro_rules! impl_newtype_array {
 
 /// Apply the `LowerHex` and `UpperHex` traits.  TODO: this macro doesn't
 /// generalize properly at the moment.  Make it not terrible plz.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_hexfmt {
     ($outer: ident, $lowtoken: expr, $uptoken: expr) => {
@@ -158,6 +163,7 @@ macro_rules! impl_newtype_hexfmt {
 /// Implement useful traits for byte-array newtypes
 /// (e.g.; `Foo([u8;n])`).  includes implementations
 /// from `impl_newtype_array`.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_bytearray {
     ($outer: ident, $len: expr) => {
@@ -171,6 +177,7 @@ macro_rules! impl_newtype_bytearray {
 /// Includes all implementations from the `impl_newtype` macro,
 /// as well as a number of useful traits which cannot be
 /// derived via `#[derive(...)]`.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_array_ext {
     ($outer: ident, $inner: ty, $len:expr) => {
@@ -202,6 +209,7 @@ macro_rules! impl_newtype_array_ext {
 /// implements additional useful traits for numeric-array newtypes
 /// (e.g.; `Foo([usize;n])`) of greater than 32 elements.
 /// Includes all impls from `impl_newtype_numarray`.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_numarray_ext {
     ($outer: ident, $inner: ty, $len:expr) => {
@@ -230,6 +238,7 @@ macro_rules! impl_newtype_numarray_ext {
 /// (e.g.; `Foo([u8;n])`) for arrays of greater than 32 elements.
 /// Includes all implementations the `impl_newtype_array_ext`
 /// and `impl_newtype_numarray_ext` macros.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_newtype_bytearray_ext {
     ($outer: ident, $len:expr) => {

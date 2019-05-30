@@ -130,8 +130,32 @@ where
 }
 
 /// Variant of `SerHex` for serializing/deserializing `Option` types.
+///
 /// Any type `T` which implements `SerHex<C>` implements `SerHexOpt<C>`
 /// automatically.
+///
+/// ```rust
+/// # #[macro_use]
+/// # extern crate serde_derive;
+/// # extern crate serde_json;
+/// # extern crate serde_hex;
+/// # use serde_hex::{SerHexOpt,CompactPfx};
+/// #
+/// #[derive(Debug,PartialEq,Eq,Serialize,Deserialize)]
+/// struct MaybeNum {
+///     #[serde(with = "SerHexOpt::<CompactPfx>")]
+///     num: Option<u64>
+/// }
+///
+/// # fn main() {
+/// let s: MaybeNum = serde_json::from_str(r#"{"num":"0xff"}"#).unwrap();
+/// assert_eq!(s,MaybeNum { num: Some(255) });
+///
+/// let n: MaybeNum = serde_json::from_str(r#"{"num":null}"#).unwrap();
+/// assert_eq!(n,MaybeNum { num: None });
+/// # }
+/// ```
+///
 pub trait SerHexOpt<C>: Sized + SerHex<C>
 where
     C: HexConf,
@@ -181,6 +205,27 @@ where
 
 /// Variant of `SerHex` for serializing/deserializing sequence types as
 /// contiguous hexadecimal strings.
+///
+/// *NOTE*: `Compact` configurations are not compatible with this trait.
+/// The size of each element must be consistent in order to avoid ambiguous
+/// encoding.
+///
+/// ```rust
+/// # #[macro_use]
+/// # extern crate serde_derive;
+/// # extern crate serde_json;
+/// # extern crate serde_hex;
+/// # use serde_hex::{SerHexSeq,StrictPfx};
+/// #
+/// #[derive(Debug,PartialEq,Eq,Serialize,Deserialize)]
+/// struct Bytes(#[serde(with = "SerHexSeq::<StrictPfx>")] Vec<u8>);
+///
+/// # fn main() {
+/// let bytes: Bytes = serde_json::from_str(r#""0xdeadbeef""#).unwrap();
+/// assert_eq!(bytes,Bytes(vec![0xde,0xad,0xbe,0xef]));
+/// # }
+/// ```
+///
 pub trait SerHexSeq<C>: Sized + SerHex<Strict> + SerHex<StrictCap>
 where
     C: HexConf,
