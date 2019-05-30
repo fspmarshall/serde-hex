@@ -7,36 +7,42 @@
 //! the compiler will (usually) optimize away all configuration
 //! checks.
 
-
 /// Trait for supplying configuration to `SerHex`.
 /// This trait takes no `self` parameters, as it is
 /// intended to be applied unit structs.  All default
 /// implementation are set to `false`.
 pub trait HexConf {
-    /// function indicating whether to use compact 
+    /// function indicating whether to use compact
     /// (as apposed to strict) representation.
     #[inline]
-    fn compact() -> bool { false }
+    fn compact() -> bool {
+        false
+    }
     /// function indicating whether to prefixing (`0x`).
     #[inline]
-    fn withpfx() -> bool { false }
+    fn withpfx() -> bool {
+        false
+    }
     /// function indicating whether to use capital letters (`A-F`).
     #[inline]
-    fn withcap() -> bool { false }
+    fn withcap() -> bool {
+        false
+    }
 }
-
 
 /// Config indicating a strict representation
 /// with no capiltaization and no prefixing.
 pub struct Strict;
-impl HexConf for Strict { }
+impl HexConf for Strict {}
 
 /// Config indicating a strict representation
 /// with prefixing but no capitalization.
 pub struct StrictPfx;
 impl HexConf for StrictPfx {
     #[inline]
-    fn withpfx() -> bool { true }
+    fn withpfx() -> bool {
+        true
+    }
 }
 
 /// Config indicating a strict representation
@@ -44,7 +50,9 @@ impl HexConf for StrictPfx {
 pub struct StrictCap;
 impl HexConf for StrictCap {
     #[inline]
-    fn withcap() -> bool { true }
+    fn withcap() -> bool {
+        true
+    }
 }
 
 /// Config indicating a strict representation
@@ -52,9 +60,13 @@ impl HexConf for StrictCap {
 pub struct StrictCapPfx;
 impl HexConf for StrictCapPfx {
     #[inline]
-    fn withpfx() -> bool { true }
+    fn withpfx() -> bool {
+        true
+    }
     #[inline]
-    fn withcap() -> bool { true }
+    fn withcap() -> bool {
+        true
+    }
 }
 
 /// Config indicating compact representation
@@ -62,7 +74,9 @@ impl HexConf for StrictCapPfx {
 pub struct Compact;
 impl HexConf for Compact {
     #[inline]
-    fn compact() -> bool { true }
+    fn compact() -> bool {
+        true
+    }
 }
 
 /// Config indicating compact representation
@@ -70,9 +84,13 @@ impl HexConf for Compact {
 pub struct CompactPfx;
 impl HexConf for CompactPfx {
     #[inline]
-    fn compact() -> bool { true }
+    fn compact() -> bool {
+        true
+    }
     #[inline]
-    fn withpfx() -> bool { true }
+    fn withpfx() -> bool {
+        true
+    }
 }
 
 /// Config indicating compact representation
@@ -80,9 +98,13 @@ impl HexConf for CompactPfx {
 pub struct CompactCap;
 impl HexConf for CompactCap {
     #[inline]
-    fn compact() -> bool { true }
+    fn compact() -> bool {
+        true
+    }
     #[inline]
-    fn withcap() -> bool { true }
+    fn withcap() -> bool {
+        true
+    }
 }
 
 /// Config indicating compact representation
@@ -90,11 +112,15 @@ impl HexConf for CompactCap {
 pub struct CompactCapPfx;
 impl HexConf for CompactCapPfx {
     #[inline]
-    fn compact() -> bool { true }
+    fn compact() -> bool {
+        true
+    }
     #[inline]
-    fn withcap() -> bool { true }
+    fn withcap() -> bool {
+        true
+    }
     #[inline]
-    fn withpfx() -> bool { true }
+    fn withpfx() -> bool {
+        true
+    }
 }
-
-
