@@ -1,8 +1,6 @@
-# serde-hex [![Build Status](https://travis-ci.org/forrest-marshall/serde-hex.svg?branch=master)](https://travis-ci.org/forrest-marshall/serde-hex) ![Crates.io](https://img.shields.io/crates/v/serde-hex.svg)
+# serde-hex [![Build Status](https://travis-ci.org/forrest-marshall/serde-hex.svg?branch=master)](https://travis-ci.org/forrest-marshall/serde-hex) ![Crates.io](https://img.shields.io/crates/v/serde-hex.svg) [![](https://img.shields.io/badge/rust-docs-blue.svg)](https://docs.rs/serde-hex/)
 
 Rust crate for easy and versatile serialization/deserialization of hexadecimal values.
-
-#### [API Documentation](https://docs.rs/serde-hex/0.1.0/serde_hex/)
 
 ## Overview
 
