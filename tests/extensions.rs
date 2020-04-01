@@ -35,3 +35,17 @@ fn deserialize() {
     };
     assert_eq!(ext, exp);
 }
+
+#[test]
+fn deserialize_owned() {
+    let ser = serde_json::json!({
+        "seq": "0x0123456789abcdef",
+        "opt": "aa"
+    });
+    let ext = serde_json::from_value::<Ext>(ser).unwrap();
+    let exp = Ext {
+        seq: vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef],
+        opt: Some(0xaa),
+    };
+    assert_eq!(ext, exp);
+}
