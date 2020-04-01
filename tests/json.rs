@@ -35,3 +35,17 @@ fn deserialize() {
     };
     assert_eq!(foo, exp);
 }
+
+#[test]
+fn deserialize_owned() {
+    let ser = serde_json::json!({
+        "bar": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bin": "0x1234"
+    });
+    let foo = serde_json::from_value::<Foo>(ser).unwrap();
+    let exp = Foo {
+        bar: [0xaa; 32],
+        bin: 0x1234,
+    };
+    assert_eq!(foo, exp);
+}
