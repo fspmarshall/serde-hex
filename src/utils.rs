@@ -23,9 +23,9 @@ pub fn intoval(c: u8) -> Result<u8, ParseHexError> {
     //   MIT/APACHE (at your option)
     // ------------------------------------------------------
     match c {
-        b'A'...b'F' => Ok(c - b'A' + 10),
-        b'a'...b'f' => Ok(c - b'a' + 10),
-        b'0'...b'9' => Ok(c - b'0'),
+        b'A'..=b'F' => Ok(c - b'A' + 10),
+        b'a'..=b'f' => Ok(c - b'a' + 10),
+        b'0'..=b'9' => Ok(c - b'0'),
         _ => {
             let val = c as char;
             Err(ParseHexError::Char { val })
@@ -38,9 +38,9 @@ pub fn intoval(c: u8) -> Result<u8, ParseHexError> {
 #[inline]
 pub fn fromval(val: u8) -> u8 {
     match val {
-        0xa...0xf => val - 0xa + b'a',
-        0x0...0x9 => val + b'0',
-        _ => panic!("value outside range 0x0...0xf"),
+        0xa..=0xf => val - 0xa + b'a',
+        0x0..=0x9 => val + b'0',
+        _ => panic!("value outside range 0x0..=0xf"),
     }
 }
 
@@ -49,9 +49,9 @@ pub fn fromval(val: u8) -> u8 {
 #[inline]
 pub fn fromvalcaps(val: u8) -> u8 {
     match val {
-        0xA...0xF => val - 0xa + b'A',
-        0x0...0x9 => val + b'0',
-        _ => panic!("value outside range 0x0...0xf"),
+        0xA..=0xF => val - 0xa + b'A',
+        0x0..=0x9 => val + b'0',
+        _ => panic!("value outside range 0x0..=0xf"),
     }
 }
 
