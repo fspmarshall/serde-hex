@@ -226,7 +226,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        let option = deserializer.deserialize_bytes(OptHexBytesVisitor::default())?;
+        let option = deserializer.deserialize_any(OptHexBytesVisitor::default())?;
 
         Ok(option)
     }
@@ -288,6 +288,13 @@ impl<'de, S, C> Visitor<'de> for OptHexBytesVisitor<S, C> where S: SerHexOpt<C>,
 
     fn visit_none<E>(self) -> Result<Self::Value, E> where
         E: serde::de::Error, {
+        Ok(None)
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
         Ok(None)
     }
 
