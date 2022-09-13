@@ -54,7 +54,7 @@ use smallvec::SmallVec;
 use std::iter::FromIterator;
 use std::{error, io, fmt};
 use serde::de::{Visitor};
-use serde::export::{PhantomData};
+use serde::__private::{PhantomData};
 
 /// Trait specifying custom serialization and deserialization logic from a
 /// hexadecimal string to some arbitrary type.  This trait can be used to apply
