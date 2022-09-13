@@ -230,7 +230,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        let option = deserializer.deserialize_bytes(OptHexBytesVisitor::default())?;
+        let option = deserializer.deserialize_any(OptHexBytesVisitor::default())?;
 
         Ok(option)
     }
@@ -294,6 +294,13 @@ where
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(None)
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
