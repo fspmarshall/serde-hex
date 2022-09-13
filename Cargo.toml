@@ -1,5 +1,5 @@
 [package]
-name = "serde-hex"
+name = "stremio-serde-hex"
 version = "0.1.0"
 authors = ["Forrest Marshall <fourthetrees@gmail.com>"]
 description = "Hexadecimal encoding/decoding with serde."

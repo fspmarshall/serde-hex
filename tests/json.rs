@@ -1,10 +1,10 @@
 //! Test of `SerHex` functionality with `serde-json`.
-extern crate serde_hex;
+extern crate stremio_serde_hex;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
-use serde_hex::{CompactPfx, SerHex, StrictPfx};
+use stremio_serde_hex::{CompactPfx, SerHex, StrictPfx};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct Foo {

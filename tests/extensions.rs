@@ -1,10 +1,10 @@
 //! Test of extension traits (e.g.; `SerHexSeq`).
-extern crate serde_hex;
+extern crate stremio_serde_hex;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
-use serde_hex::{SerHexOpt, SerHexSeq, StrictPfx};
+use stremio_serde_hex::{SerHexOpt, SerHexSeq, StrictPfx};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct Ext {

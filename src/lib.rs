@@ -8,8 +8,8 @@
 //! ```rust
 //! #[macro_use]
 //! extern crate serde_derive;
-//! extern crate serde_hex;
-//! use serde_hex::{SerHex,StrictPfx};
+//! extern crate stremio_serde_hex;
+//! use stremio_serde_hex::{SerHex,StrictPfx};
 //!
 //! #[derive(Debug,Serialize,Deserialize)]
 //! struct Foo {
@@ -183,8 +183,8 @@ where
 /// # #[macro_use]
 /// # extern crate serde_derive;
 /// # extern crate serde_json;
-/// # extern crate serde_hex;
-/// # use serde_hex::{SerHexOpt,CompactPfx};
+/// # extern crate stremio_serde_hex;
+/// # use stremio_serde_hex::{SerHexOpt,CompactPfx};
 /// #
 /// #[derive(Debug,PartialEq,Eq,Serialize,Deserialize)]
 /// struct MaybeNum {
@@ -328,8 +328,8 @@ where
 /// # #[macro_use]
 /// # extern crate serde_derive;
 /// # extern crate serde_json;
-/// # extern crate serde_hex;
-/// # use serde_hex::{SerHexSeq,StrictPfx};
+/// # extern crate stremio_serde_hex;
+/// # use stremio_serde_hex::{SerHexSeq,StrictPfx};
 /// #
 /// #[derive(Debug,PartialEq,Eq,Serialize,Deserialize)]
 /// struct Bytes(#[serde(with = "SerHexSeq::<StrictPfx>")] Vec<u8>);
