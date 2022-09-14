@@ -49,10 +49,12 @@ pub mod utils;
 pub use config::*;
 pub use types::{Error, ParseHexError};
 
-use serde::{Deserialize, Deserializer, Serializer};
+use serde::{Deserializer, Serializer};
 use smallvec::SmallVec;
 use std::iter::FromIterator;
-use std::{error, io};
+use std::{error, io, fmt};
+use std::marker::PhantomData;
+use serde::de::{Visitor};
 
 /// Trait specifying custom serialization and deserialization logic from a
 /// hexadecimal string to some arbitrary type.  This trait can be used to apply
@@ -122,10 +124,49 @@ where
     where
         D: Deserializer<'de>,
     {
-        use serde::de::Error;
-        let buff: &[u8] = Deserialize::deserialize(deserializer)?;
-        let rslt = Self::from_hex_raw(buff).map_err(D::Error::custom)?;
+        let rslt = deserializer.deserialize_any(HexBytesVisitor::default())?;
         Ok(rslt)
+    }
+}
+
+struct HexBytesVisitor<S, C> {
+    _phantom: PhantomData<(S, C)>
+}
+
+impl<S, C> Default for HexBytesVisitor<S, C> {
+    fn default() -> Self {
+        Self {
+            _phantom: PhantomData
+        }
+    }
+}
+
+impl<'de, S, C> Visitor<'de> for HexBytesVisitor<S, C> where S: SerHex<C>, C: HexConf {
+    type Value = S;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a hex string")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        S::from_hex_raw(v).map_err(E::custom)
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        S::from_hex_raw(v).map_err(E::custom)
+    }
+
+    fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        S::from_hex_raw(v).map_err(E::custom)
     }
 }
 
@@ -185,22 +226,84 @@ where
     where
         D: Deserializer<'de>,
     {
-        use serde::de::Error;
-        let option: Option<&[u8]> = Deserialize::deserialize(deserializer)?;
-        if let Some(ref buff) = option {
-            let rslt = Self::from_hex_raw(buff).map_err(D::Error::custom)?;
-            Ok(Some(rslt))
-        } else {
-            Ok(None)
+        let option = deserializer.deserialize_any(OptHexBytesVisitor::default())?;
+
+        Ok(option)
+    }
+}
+
+impl<S, C> SerHexOpt<C> for S
+where
+    S: Sized + SerHex<C>,
+    C: HexConf,
+{
+}
+
+struct OptHexBytesVisitor<S, C> {
+    _phantom: PhantomData<(S, C)>
+}
+
+impl<T, C> Default for OptHexBytesVisitor<T, C> {
+    fn default() -> Self {
+        Self {
+            _phantom: PhantomData
         }
     }
 }
 
-impl<T, C> SerHexOpt<C> for T
-where
-    T: Sized + SerHex<C>,
-    C: HexConf,
-{
+
+impl<'de, S, C> Visitor<'de> for OptHexBytesVisitor<S, C> where S: SerHexOpt<C>, C: HexConf {
+    type Value = Option<S>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a hex string")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        let s = S::from_hex_raw(v).map_err(E::custom)?;
+
+        Ok(Some(s))
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        let s = S::from_hex_raw(v).map_err(E::custom)?;
+
+        Ok(Some(s))
+    }
+
+    fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        let s = S::from_hex_raw(v).map_err(E::custom)?;
+
+        Ok(Some(s))
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> where
+        E: serde::de::Error, {
+        Ok(None)
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(None)
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, <D as Deserializer<'de>>::Error> where
+        D: Deserializer<'de>, {
+        let result = deserializer.deserialize_bytes(self)?;
+
+        Ok(result)
+    }
 }
 
 /// Variant of `SerHex` for serializing/deserializing sequence types as
@@ -266,25 +369,73 @@ where
         D: Deserializer<'de>,
         T: FromIterator<Self>,
     {
-        use serde::de::Error;
-        let raw: &[u8] = Deserialize::deserialize(deserializer)?;
-        let src = if raw.starts_with(b"0x") {
-            &raw[2..]
-        } else {
-            &raw[..]
-        };
-        let hexsize = Self::size() * 2;
-        if src.len() % hexsize == 0 {
-            let mut buff = Vec::with_capacity(src.len() / hexsize);
-            for chunk in src.chunks(hexsize) {
-                let elem =
-                    <Self as SerHex<Strict>>::from_hex_raw(chunk).map_err(D::Error::custom)?;
-                buff.push(elem);
-            }
-            Ok(buff.into_iter().collect())
-        } else {
-            Err(D::Error::custom("bad hexadecimal sequence size"))
+        deserializer.deserialize_bytes(SeqHexBytesVisitor::<Self, C, T>::default())
+    }
+}
+
+struct SeqHexBytesVisitor<S, C, T> {
+    _phantom: PhantomData<(S, C, T)>
+}
+
+impl<S, C, T> Default for SeqHexBytesVisitor<S, C, T> {
+    fn default() -> Self {
+        Self {
+            _phantom: PhantomData
         }
+    }
+}
+
+impl<'de, S, C, T> Visitor<'de> for SeqHexBytesVisitor<S, C, T> where S: SerHexSeq<C>, C: HexConf, T: FromIterator<S> {
+    type Value = T;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a hex string")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        seq_from_bytes(v.as_bytes(), S::size())
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        seq_from_bytes(v.as_bytes(), S::size())
+    }
+
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> where
+        E: serde::de::Error, {
+        seq_from_bytes(v, S::size())
+    }
+
+    fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+    {
+        seq_from_bytes(v, S::size())
+    }
+}
+
+fn seq_from_bytes<S, E, T>(raw: &[u8], size_hint: usize) -> Result<T, E> where S: SerHex<Strict>, E: serde::de::Error, T: FromIterator<S> {
+    let src = if raw.starts_with(b"0x") {
+        &raw[2..]
+    } else {
+        &raw[..]
+    };
+    let hexsize = size_hint * 2;
+    if src.len() % hexsize == 0 {
+        let mut buff = Vec::with_capacity(src.len() / hexsize);
+        for chunk in src.chunks(hexsize) {
+            let elem =
+                S::from_hex_raw(chunk).map_err(E::custom)?;
+            buff.push(elem);
+        }
+        Ok(buff.into_iter().collect())
+    } else {
+        Err(E::custom("bad hexadecimal sequence size"))
     }
 }
 
